@@ -85,7 +85,7 @@ class ExerciceController extends Controller
  
     public function destroy(Exercice $exercice): JsonResponse
     {
-        $exercice->delete();
+        $exercice->delete($exercice);
  
         return response()->json(['message' => 'Exercice supprimé.']);
     }
