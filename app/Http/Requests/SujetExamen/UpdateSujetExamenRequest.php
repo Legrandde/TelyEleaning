@@ -15,6 +15,7 @@ class UpdateSujetExamenRequest extends FormRequest
             'annee'      => ['sometimes', 'integer', 'min:2000', 'max:' . date('Y')],
             'session'    => ['sometimes', 'in:juin,septembre,janvier'],
             'type'       => ['sometimes', 'in:bac,brevet,composition,autre'],
+            'ennonce' => ['sometimes', 'string'],
             'matiere_id' => ['sometimes', 'exists:matieres,id'],
             'niveau_id'  => ['sometimes', 'exists:niveaux,id'],
         ];

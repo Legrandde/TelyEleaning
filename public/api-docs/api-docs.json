@@ -156,20 +156,162 @@
                                     },
                                     "password": {
                                         "type": "string"
-                                    },
-                                    "role": {
-                                        "type": "string",
-                                        "enum": [
-                                            "eleve",
-                                            "professeur",
-                                            "administrateur"
-                                        ]
                                     }
                                 },
                                 "required": [
                                     "email",
-                                    "password",
-                                    "role"
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/analytics/track": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Analyticss"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/candidatures-professeurs": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nom": {
+                                        "type": "string"
+                                    },
+                                    "prenom": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "telephone": {
+                                        "type": "string"
+                                    },
+                                    "specialite": {
+                                        "type": "string"
+                                    },
+                                    "etablissement": {
+                                        "type": "string"
+                                    },
+                                    "diplome": {
+                                        "type": "string"
+                                    },
+                                    "experience_annees": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    },
+                                    "message": {
+                                        "type": "string"
+                                    },
+                                    "cv": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "required": [
+                                    "nom",
+                                    "prenom",
+                                    "email",
+                                    "specialite"
                                 ]
                             }
                         }
@@ -574,11 +716,15 @@
                                     },
                                     "description": {
                                         "type": "string"
+                                    },
+                                    "image": {
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
                                     "nom",
-                                    "code"
+                                    "code",
+                                    "image"
                                 ]
                             }
                         }
@@ -695,6 +841,9 @@
                                         "type": "string"
                                     },
                                     "description": {
+                                        "type": "string"
+                                    },
+                                    "image": {
                                         "type": "string"
                                     }
                                 }
@@ -1178,6 +1327,9 @@
                                     "est_actif": {
                                         "type": "boolean"
                                     },
+                                    "image": {
+                                        "type": "string"
+                                    },
                                     "matiere_id": {
                                         "type": "string"
                                     },
@@ -1334,6 +1486,9 @@
                                     "est_actif": {
                                         "type": "boolean"
                                     },
+                                    "image": {
+                                        "type": "string"
+                                    },
                                     "matiere_id": {
                                         "type": "string"
                                     },
@@ -1419,7 +1574,7 @@
                 ]
             }
         },
-        "/api/sujets-examen": {
+        "/api/sujets": {
             "get": {
                 "summary": "",
                 "tags": [
@@ -1534,6 +1689,9 @@
                                     "niveau_id": {
                                         "type": "string"
                                     },
+                                    "ennonce": {
+                                        "type": "string"
+                                    },
                                     "exercices": {
                                         "type": "array",
                                         "items": {
@@ -1557,6 +1715,7 @@
                                     "type",
                                     "matiere_id",
                                     "niveau_id",
+                                    "ennonce",
                                     "exercices.*.id",
                                     "exercices.*.ordre"
                                 ]
@@ -1575,7 +1734,7 @@
                 ]
             }
         },
-        "/api/sujets-examen/{sujets_examan}": {
+        "/api/sujets/{sujet}": {
             "get": {
                 "summary": "",
                 "tags": [
@@ -1613,7 +1772,200 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "sujets_examan",
+                        "name": "sujet",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/ressources": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Ressources"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Ressources"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "titre": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "cours",
+                                            "resume",
+                                            "fiche",
+                                            "td",
+                                            "autre"
+                                        ]
+                                    },
+                                    "matiere_id": {
+                                        "type": "string"
+                                    },
+                                    "niveau_id": {
+                                        "type": "string"
+                                    },
+                                    "professeur_id": {
+                                        "type": "string"
+                                    },
+                                    "fichier": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "fichier_path": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "titre",
+                                    "type",
+                                    "matiere_id",
+                                    "niveau_id"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/ressources/{ressource}": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Ressources"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "ressource",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -1631,7 +1983,7 @@
             "put": {
                 "summary": "",
                 "tags": [
-                    "Sujetexamens"
+                    "Ressources"
                 ],
                 "responses": {
                     "200": {
@@ -1671,24 +2023,16 @@
                                     "titre": {
                                         "type": "string"
                                     },
-                                    "annee": {
-                                        "type": "integer",
-                                        "format": "int32"
-                                    },
-                                    "session": {
-                                        "type": "string",
-                                        "enum": [
-                                            "juin",
-                                            "septembre",
-                                            "janvier"
-                                        ]
+                                    "description": {
+                                        "type": "string"
                                     },
                                     "type": {
                                         "type": "string",
                                         "enum": [
-                                            "bac",
-                                            "brevet",
-                                            "composition",
+                                            "cours",
+                                            "resume",
+                                            "fiche",
+                                            "td",
                                             "autre"
                                         ]
                                     },
@@ -1696,6 +2040,13 @@
                                         "type": "string"
                                     },
                                     "niveau_id": {
+                                        "type": "string"
+                                    },
+                                    "fichier": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "fichier_path": {
                                         "type": "string"
                                     }
                                 }
@@ -1706,7 +2057,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "sujets_examan",
+                        "name": "ressource",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -1724,7 +2075,7 @@
             "delete": {
                 "summary": "",
                 "tags": [
-                    "Sujetexamens"
+                    "Ressources"
                 ],
                 "responses": {
                     "200": {
@@ -1758,7 +2109,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "sujets_examan",
+                        "name": "ressource",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -1915,6 +2266,163 @@
                             "application/json": {
                                 "schema": [],
                                 "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/auth/profile": {
+            "put": {
+                "summary": "",
+                "tags": [
+                    "Auths"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nom": {
+                                        "type": "string"
+                                    },
+                                    "prenom": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "avatar": {
+                                        "type": "string"
+                                    },
+                                    "specialite": {
+                                        "type": "string"
+                                    },
+                                    "classe": {
+                                        "type": "string"
+                                    },
+                                    "matricule": {
+                                        "type": "string"
+                                    },
+                                    "niveau_id": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "nom",
+                                    "prenom",
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/auth/password": {
+            "put": {
+                "summary": "",
+                "tags": [
+                    "Auths"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ]
                             }
                         }
                     }
@@ -2105,6 +2613,50 @@
             }
         },
         "/api/corrections": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Corrections"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
             "post": {
                 "summary": "",
                 "tags": [
@@ -2287,6 +2839,560 @@
                             "type": "string"
                         }
                     },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/sujets-examen": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Sujetexamens"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "titre": {
+                                        "type": "string"
+                                    },
+                                    "annee": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    },
+                                    "session": {
+                                        "type": "string",
+                                        "enum": [
+                                            "juin",
+                                            "septembre",
+                                            "janvier"
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "bac",
+                                            "brevet",
+                                            "composition",
+                                            "autre"
+                                        ]
+                                    },
+                                    "matiere_id": {
+                                        "type": "string"
+                                    },
+                                    "niveau_id": {
+                                        "type": "string"
+                                    },
+                                    "ennonce": {
+                                        "type": "string"
+                                    },
+                                    "exercices": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "ordre": {
+                                                    "type": "integer",
+                                                    "format": "int32"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "titre",
+                                    "annee",
+                                    "session",
+                                    "type",
+                                    "matiere_id",
+                                    "niveau_id",
+                                    "ennonce",
+                                    "exercices.*.id",
+                                    "exercices.*.ordre"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/sujets-examen/{sujetExamen}": {
+            "put": {
+                "summary": "",
+                "tags": [
+                    "Sujetexamens"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "titre": {
+                                        "type": "string"
+                                    },
+                                    "annee": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    },
+                                    "session": {
+                                        "type": "string",
+                                        "enum": [
+                                            "juin",
+                                            "septembre",
+                                            "janvier"
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "bac",
+                                            "brevet",
+                                            "composition",
+                                            "autre"
+                                        ]
+                                    },
+                                    "ennonce": {
+                                        "type": "string"
+                                    },
+                                    "matiere_id": {
+                                        "type": "string"
+                                    },
+                                    "niveau_id": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "sujetExamen",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "",
+                "tags": [
+                    "Sujetexamens"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "sujetExamen",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/sujets/{sujetExamen}": {
+            "put": {
+                "summary": "",
+                "tags": [
+                    "Sujetexamens"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "titre": {
+                                        "type": "string"
+                                    },
+                                    "annee": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    },
+                                    "session": {
+                                        "type": "string",
+                                        "enum": [
+                                            "juin",
+                                            "septembre",
+                                            "janvier"
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "bac",
+                                            "brevet",
+                                            "composition",
+                                            "autre"
+                                        ]
+                                    },
+                                    "ennonce": {
+                                        "type": "string"
+                                    },
+                                    "matiere_id": {
+                                        "type": "string"
+                                    },
+                                    "niveau_id": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "sujetExamen",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "",
+                "tags": [
+                    "Sujetexamens"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "sujetExamen",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/professeur/stats": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Professeurdashboards"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/stats": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Admindashboards"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/analytics": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Analyticss"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
                     {
                         "in": "header",
                         "name": "User-Agent",
@@ -2882,6 +3988,286 @@
                 ]
             }
         },
+        "/api/admin/candidatures-professeurs": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/candidatures-professeurs/{id}": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/candidatures-professeurs/{id}/approuver": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/candidatures-professeurs/{id}/rejeter": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Candidatureprofesseurs"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
         "/api/auth/google": {
             "get": {
                 "summary": "",
@@ -2959,6 +4345,69 @@
                             "application/json": {
                                 "schema": [],
                                 "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/auth/google/one-tap": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Googles"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "credential": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "credential"
+                                ]
                             }
                         }
                     }

@@ -21,8 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
-        // ─── Sanctum stateful domains (si tu utilises SPA) ──
-        // $middleware->statefulApi();
+        // ─── Traçage automatique des visites réelles ────────
+        $middleware->append(\App\Http\Middleware\TrackVisits::class);
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

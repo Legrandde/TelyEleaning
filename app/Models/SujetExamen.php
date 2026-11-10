@@ -13,6 +13,7 @@ class SujetExamen extends Model
         'annee',
         'session',
         'type',
+        'ennonce',
         'matiere_id',
         'niveau_id',
     ];

@@ -14,7 +14,7 @@ class SujetExamenController extends Controller
     {
         $query = SujetExamen::with(['matiere', 'niveau'])
             ->withCount('exercices');
- 
+
         if ($request->filled('matiere_id')) {
             $query->where('matiere_id', $request->matiere_id);
         }
@@ -31,7 +31,7 @@ class SujetExamenController extends Controller
             $query->parType($request->type);
         }
  
-        $sujets = $query->orderByDesc('annee')->paginate(15);
+        $sujets = $query->orderByDesc('annee')->get();
  
         return response()->json($sujets);
     }
@@ -55,16 +55,16 @@ class SujetExamenController extends Controller
         ], 201);
     }
  
-    public function show(SujetExamen $sujetExamen): JsonResponse
+    public function show(SujetExamen $sujet): JsonResponse
     {
-        $sujetExamen->load([
+        $sujet->load([
             'matiere',
             'niveau',
             'exercices.correction',
             'exercices.categorie',
         ]);
  
-        return response()->json($sujetExamen);
+        return response()->json($sujet);
     }
  
     public function update(UpdateSujetExamenRequest $request, SujetExamen $sujetExamen): JsonResponse

@@ -13,7 +13,6 @@ class LoginRequest extends FormRequest
         return [
             'email'    => ['required', 'email'],
             'password' => ['required', 'string', 'min:6'],
-            'role'     => ['required', 'in:eleve,professeur,administrateur'],
         ];
     }
  

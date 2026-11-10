@@ -1,13 +1,13 @@
 <?php
 
 namespace App\Http\Requests\Exercice;
- 
+
 use Illuminate\Foundation\Http\FormRequest;
- 
+
 class StoreExerciceRequest extends FormRequest
 {
     public function authorize(): bool { return true; }
- 
+
     public function rules(): array
     {
         return [
@@ -16,13 +16,14 @@ class StoreExerciceRequest extends FormRequest
             'type'          => ['required', 'in:classique,qcm,probleme,sujet_examen'],
             'difficulte'    => ['required', 'in:facile,moyen,difficile'],
             'est_actif'     => ['boolean'],
+            'image'         => ['nullable'],
             'matiere_id'    => ['required', 'exists:matieres,id'],
             'niveau_id'     => ['required', 'exists:niveaux,id'],
             'categorie_id'  => ['nullable', 'exists:categories,id'],
             'professeur_id' => ['required', 'exists:professeurs,id'],
         ];
     }
- 
+
     public function messages(): array
     {
         return [
@@ -42,5 +43,3 @@ class StoreExerciceRequest extends FormRequest
         ];
     }
 }
- 
- 

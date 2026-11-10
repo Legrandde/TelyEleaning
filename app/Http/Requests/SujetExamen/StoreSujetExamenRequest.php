@@ -17,6 +17,7 @@ class StoreSujetExamenRequest extends FormRequest
             'type'       => ['required', 'in:bac,brevet,composition,autre'],
             'matiere_id' => ['required', 'exists:matieres,id'],
             'niveau_id'  => ['required', 'exists:niveaux,id'],
+            'ennonce' => ['required', 'string'],
             // IDs des exercices à attacher (optionnel à la création)
             'exercices'              => ['nullable', 'array'],
             'exercices.*.id'         => ['required', 'exists:exercices,id'],

@@ -45,7 +45,7 @@ class EleveController extends Controller
  
     public function destroy(Eleve $eleve): JsonResponse
     {
-        $eleve->delete();
+        $eleve->delete($eleve);
  
         return response()->json(['message' => 'Élève supprimé.']);
     }
