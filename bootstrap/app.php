@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
+        // ─── En-têtes de sécurité HTTP ──────────────────────
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         // ─── Traçage automatique des visites réelles ────────
         $middleware->append(\App\Http\Middleware\TrackVisits::class);
 

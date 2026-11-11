@@ -7,6 +7,7 @@ use App\Http\Requests\Correction\UpdateCorrectionRequest;
 use App\Models\Correction;
 use App\Models\Exercice;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CorrectionController extends Controller
 {
@@ -45,6 +46,11 @@ class CorrectionController extends Controller
 
     public function update(UpdateCorrectionRequest $request, Correction $correction): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $correction->exercice?->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez modifier que les corrigés de vos propres exercices.'], 403);
+        }
+
         $correction->update($request->validated());
 
         return response()->json([
@@ -53,8 +59,13 @@ class CorrectionController extends Controller
         ]);
     }
 
-    public function destroy(Correction $correction): JsonResponse
+    public function destroy(Request $request, Correction $correction): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $correction->exercice?->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez supprimer que les corrigés de vos propres exercices.'], 403);
+        }
+
         $correction->delete();
 
         return response()->json(['message' => 'Correction supprimée.']);

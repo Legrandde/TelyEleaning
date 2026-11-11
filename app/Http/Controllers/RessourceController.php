@@ -52,13 +52,16 @@ class RessourceController extends Controller
             'matiere_id'    => 'required|exists:matieres,id',
             'niveau_id'     => 'required|exists:niveaux,id',
             'professeur_id' => 'nullable|exists:professeurs,id',
-            'fichier'       => 'nullable|file|max:30720', // max 30MB
+            'fichier'       => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,ppt,pptx,xls,xlsx,zip|max:30720', // max 30MB
             'fichier_path'  => 'nullable|string|max:500',
         ]);
 
-        $professeurId = $validated['professeur_id'] ?? null;
-        if (!$professeurId && Auth::user()?->professeur) {
-            $professeurId = Auth::user()->professeur->id;
+        $user = Auth::user();
+        $professeurId = null;
+        if ($user?->isAdministrateur() && isset($validated['professeur_id'])) {
+            $professeurId = $validated['professeur_id'];
+        } elseif ($user?->professeur) {
+            $professeurId = $user->professeur->id;
         }
 
         $fichierPath = $validated['fichier_path'] ?? null;
@@ -105,13 +108,18 @@ class RessourceController extends Controller
 
     public function update(Request $request, Ressource $ressource): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $ressource->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez modifier que vos propres ressources.'], 403);
+        }
+
         $validated = $request->validate([
             'titre'        => 'sometimes|string|max:255',
             'description'  => 'nullable|string',
             'type'         => 'sometimes|string|in:cours,resume,fiche,td,autre',
             'matiere_id'   => 'sometimes|exists:matieres,id',
             'niveau_id'    => 'sometimes|exists:niveaux,id',
-            'fichier'      => 'nullable|file|max:30720',
+            'fichier'      => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,ppt,pptx,xls,xlsx,zip|max:30720',
             'fichier_path' => 'nullable|string|max:500',
         ]);
 
@@ -135,8 +143,13 @@ class RessourceController extends Controller
         ]);
     }
 
-    public function destroy(Ressource $ressource): JsonResponse
+    public function destroy(Request $request, Ressource $ressource): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $ressource->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez supprimer que vos propres ressources.'], 403);
+        }
+
         if ($ressource->fichier_path && Storage::disk('public')->exists($ressource->fichier_path)) {
             Storage::disk('public')->delete($ressource->fichier_path);
         }

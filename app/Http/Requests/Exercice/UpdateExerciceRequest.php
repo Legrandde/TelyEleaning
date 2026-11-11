@@ -16,7 +16,7 @@ class UpdateExerciceRequest extends FormRequest
             'type'         => ['sometimes', 'in:classique,qcm,probleme,sujet_examen'],
             'difficulte'   => ['sometimes', 'in:facile,moyen,difficile'],
             'est_actif'    => ['sometimes', 'boolean'],
-            'image'        => ['nullable'],
+            'image'        => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'matiere_id'   => ['sometimes', 'exists:matieres,id'],
             'niveau_id'    => ['sometimes', 'exists:niveaux,id'],
             'categorie_id' => ['nullable', 'exists:categories,id'],

@@ -16,11 +16,16 @@ class UpdateProfileRequest extends FormRequest
     {
         $userId = $this->user()?->id;
 
+        $avatarRules = ['nullable'];
+        if ($this->hasFile('avatar')) {
+            $avatarRules = ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'];
+        }
+
         return [
             'nom'        => ['required', 'string', 'max:255'],
             'prenom'     => ['required', 'string', 'max:255'],
             'email'      => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
-            'avatar'     => ['nullable'],
+            'avatar'     => $avatarRules,
             'specialite' => ['nullable', 'string', 'max:255'],
             'classe'     => ['nullable', 'string', 'max:100'],
             'matricule'  => ['nullable', 'string', 'max:100'],

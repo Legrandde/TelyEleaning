@@ -82,9 +82,7 @@
                                     "role": {
                                         "type": "string",
                                         "enum": [
-                                            "eleve",
-                                            "professeur",
-                                            "administrateur"
+                                            "eleve"
                                         ]
                                     }
                                 },
@@ -92,8 +90,7 @@
                                     "nom",
                                     "prenom",
                                     "email",
-                                    "password",
-                                    "role"
+                                    "password"
                                 ]
                             }
                         }
@@ -1328,7 +1325,8 @@
                                         "type": "boolean"
                                     },
                                     "image": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "matiere_id": {
                                         "type": "string"
@@ -1487,7 +1485,8 @@
                                         "type": "boolean"
                                     },
                                     "image": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "matiere_id": {
                                         "type": "string"
@@ -2602,6 +2601,218 @@
                             "type": "string"
                         }
                     },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/notifications": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Appnotifications"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/notifications/{id}/read": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Appnotifications"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/notifications/read-all": {
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Appnotifications"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/parametres": {
+            "get": {
+                "summary": "",
+                "tags": [
+                    "Appparametres"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "parameters": [
                     {
                         "in": "header",
                         "name": "User-Agent",
@@ -4086,58 +4297,6 @@
                         }
                     }
                 ]
-            },
-            "delete": {
-                "summary": "",
-                "tags": [
-                    "Candidatureprofesseurs"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": [],
-                                "example": ""
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "content": {
-                            "application/json": {
-                                "schema": [],
-                                "example": ""
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "content": {
-                            "application/json": {
-                                "schema": [],
-                                "example": ""
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "in": "header",
-                        "name": "User-Agent",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ]
             }
         },
         "/api/admin/candidatures-professeurs/{id}/approuver": {
@@ -4258,6 +4417,116 @@
                             "type": "string"
                         }
                     },
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/admin/parametres": {
+            "put": {
+                "summary": "",
+                "tags": [
+                    "Appparametres"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "User-Agent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "summary": "",
+                "tags": [
+                    "Appparametres"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": [],
+                                "example": ""
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": []
+                            }
+                        }
+                    }
+                },
+                "parameters": [
                     {
                         "in": "header",
                         "name": "User-Agent",

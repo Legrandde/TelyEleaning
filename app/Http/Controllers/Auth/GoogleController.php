@@ -63,7 +63,7 @@ class GoogleController extends Controller
         $frontendUrl = config('app.frontend_url');
 
         return redirect()->away(
-            "{$frontendUrl}/auth/google/callback?token={$token}"
+            "{$frontendUrl}/auth/google/callback#token={$token}"
         );
     }
 
@@ -88,12 +88,18 @@ class GoogleController extends Controller
 
             $payload = $response->json();
         } catch (\Exception $e) {
-            // Si réseau indisponible, parser le payload base64
-            $parts = explode('.', $idToken);
-            if (count($parts) < 2) {
-                return response()->json(['message' => 'Format de token JWT invalide.'], 400);
-            }
-            $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1])), true) ?? [];
+            return response()->json(['message' => 'Impossible de valider le jeton Google. Veuillez réessayer.'], 503);
+        }
+
+        // Vérification de l'audience (client ID) pour empêcher l'usurpation inter-applications
+        $expectedClientId = config('services.google.client_id') ?? env('GOOGLE_CLIENT_ID');
+        if (!empty($expectedClientId) && isset($payload['aud']) && $payload['aud'] !== $expectedClientId) {
+            return response()->json(['message' => 'Token Google non autorisé pour cette application.'], 403);
+        }
+
+        // Vérification que l'email est validé par Google
+        if (isset($payload['email_verified']) && $payload['email_verified'] !== 'true' && $payload['email_verified'] !== true) {
+            return response()->json(['message' => 'Adresse email non vérifiée auprès de Google.'], 403);
         }
 
         $email = $payload['email'] ?? null;

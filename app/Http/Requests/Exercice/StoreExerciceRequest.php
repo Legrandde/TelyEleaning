@@ -16,7 +16,7 @@ class StoreExerciceRequest extends FormRequest
             'type'          => ['required', 'in:classique,qcm,probleme,sujet_examen'],
             'difficulte'    => ['required', 'in:facile,moyen,difficile'],
             'est_actif'     => ['boolean'],
-            'image'         => ['nullable'],
+            'image'         => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'matiere_id'    => ['required', 'exists:matieres,id'],
             'niveau_id'     => ['required', 'exists:niveaux,id'],
             'categorie_id'  => ['nullable', 'exists:categories,id'],

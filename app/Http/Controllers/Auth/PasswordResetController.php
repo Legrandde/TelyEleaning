@@ -43,6 +43,9 @@ class PasswordResetController extends Controller
 
                 $user->save();
 
+                // Révocation de tous les tokens actifs pour sécuriser le compte après reset
+                $user->tokens()->delete();
+
                 event(new PasswordReset($user));
             }
         );

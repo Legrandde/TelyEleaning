@@ -52,6 +52,12 @@ class ExerciceController extends Controller
     public function store(StoreExerciceRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $user = $request->user();
+
+        // Si l'utilisateur est un professeur, forcer son propre ID
+        if ($user && $user->isProfesseur() && $user->professeur) {
+            $data['professeur_id'] = $user->professeur->id;
+        }
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('exercices', 'public');
@@ -81,6 +87,11 @@ class ExerciceController extends Controller
 
     public function update(UpdateExerciceRequest $request, Exercice $exercice): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $exercice->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez modifier que vos propres exercices.'], 403);
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
@@ -95,8 +106,13 @@ class ExerciceController extends Controller
         ]);
     }
 
-    public function destroy(Exercice $exercice): JsonResponse
+    public function destroy(Request $request, Exercice $exercice): JsonResponse
     {
+        $user = $request->user();
+        if ($user && !$user->isAdministrateur() && (!$user->professeur || $exercice->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez supprimer que vos propres exercices.'], 403);
+        }
+
         $exercice->delete();
 
         return response()->json(['message' => 'Exercice supprimé.']);

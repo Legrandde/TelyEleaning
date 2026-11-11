@@ -38,15 +38,17 @@ class GeoIpService
         // 1. If public IP, perform cached GeoIP lookup
         if (self::isPublicIp($ip)) {
             $cacheKey = "geoip_{$ip}";
-            return Cache::remember($cacheKey, 86400, function () use ($ip) {
+            $result = Cache::remember($cacheKey, 86400, function () use ($ip) {
                 try {
                     $response = Http::timeout(2)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode,city");
                     if ($response->successful()) {
                         $data = $response->json();
                         if (($data['status'] ?? '') === 'success') {
+                            $code = strtoupper($data['countryCode'] ?? 'XX');
                             return [
                                 'country'      => $data['country'] ?? 'Inconnu',
-                                'country_code' => strtoupper($data['countryCode'] ?? 'XX'),
+                                'country_code' => $code,
+                                'code'         => $code,
                                 'city'         => $data['city'] ?? null,
                             ];
                         }
@@ -54,19 +56,27 @@ class GeoIpService
                 } catch (\Throwable) {
                     // Ignore and fallback
                 }
-                return ['country' => 'Inconnu', 'country_code' => 'XX', 'city' => null];
+                return ['country' => 'Inconnu', 'country_code' => 'XX', 'code' => 'XX', 'city' => null];
             });
+            return $result;
         }
 
         // 2. Localhost / Private network: Resolve based on client timezone
         if ($timezone && isset(self::$timezoneMap[$timezone])) {
-            return self::$timezoneMap[$timezone];
+            $item = self::$timezoneMap[$timezone];
+            return [
+                'country'      => $item['country'],
+                'country_code' => $item['code'],
+                'code'         => $item['code'],
+                'city'         => $item['city'],
+            ];
         }
 
         // Fallback default for development environment
         return [
             'country'      => 'Sénégal',
             'country_code' => 'SN',
+            'code'         => 'SN',
             'city'         => 'Dakar',
         ];
     }
