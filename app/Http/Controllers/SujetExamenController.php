@@ -36,10 +36,19 @@ class SujetExamenController extends Controller
         }
 
         if ($request->filled('q')) {
-            $query->where('titre', 'like', "%{$request->q}%");
+            $safeQ = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $request->q);
+            $query->where('titre', 'like', "%{$safeQ}%");
         }
 
         $sujets = $query->latest('annee')->paginate(15);
+
+        if (!auth('sanctum')->check()) {
+            $sujets->getCollection()->transform(function (SujetExamen $s) {
+                $s->ennonce = mb_substr($s->ennonce ?? '', 0, 180);
+                $s->fichier_pdf = null;
+                return $s;
+            });
+        }
 
         return response()->json($sujets);
     }
@@ -62,14 +71,27 @@ class SujetExamenController extends Controller
         ], 201);
     }
 
-    public function show(SujetExamen $sujet): JsonResponse
+    public function show(Request $request, SujetExamen $sujet): JsonResponse
     {
-        $sujet->load([
-            'matiere',
-            'niveau',
-            'exercices.correction',
-            'exercices.categorie',
-        ]);
+        $isAuthenticated = auth('sanctum')->check();
+
+        if ($isAuthenticated) {
+            $sujet->load([
+                'matiere',
+                'niveau',
+                'exercices.correction',
+                'exercices.categorie',
+            ]);
+        } else {
+            $sujet->load([
+                'matiere',
+                'niveau',
+                'exercices:id,titre',
+            ]);
+            // Masquer l'épreuve complète, le PDF et les corrigés pour les visiteurs non connectés
+            $sujet->ennonce = mb_substr($sujet->ennonce ?? '', 0, 180);
+            $sujet->fichier_pdf = null;
+        }
 
         return response()->json($sujet);
     }

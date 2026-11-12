@@ -16,6 +16,7 @@ class Exercice extends Model
         'difficulte',
         'est_actif',
         'image',
+        'fichier_pdf',
         'matiere_id',
         'niveau_id',
         'categorie_id',
@@ -26,7 +27,20 @@ class Exercice extends Model
         'est_actif' => 'boolean',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'pdf_url'];
+
+    public function getPdfUrlAttribute(): ?string
+    {
+        if (!$this->fichier_pdf) {
+            return null;
+        }
+
+        if (str_starts_with($this->fichier_pdf, 'http://') || str_starts_with($this->fichier_pdf, 'https://')) {
+            return $this->fichier_pdf;
+        }
+
+        return asset('storage/' . $this->fichier_pdf);
+    }
 
     public function getImageUrlAttribute(): ?string
     {

@@ -15,6 +15,7 @@ use App\Http\Controllers\ExerciceController;
 use App\Http\Controllers\HistoriqueController;
 use App\Http\Controllers\MatiereController;
 use App\Http\Controllers\NiveauController;
+use App\Http\Controllers\PdfController;
 use App\Http\Controllers\ProfesseurController;
 use App\Http\Controllers\ProfesseurDashboardController;
 use App\Http\Controllers\RessourceController;
@@ -40,11 +41,11 @@ Route::apiResource('categories',    CategorieController::class)->only(['index', 
 Route::apiResource('exercices',     ExerciceController::class)->only(['index', 'show']);
 Route::apiResource('sujets',        SujetExamenController::class)->only(['index', 'show']);
 Route::apiResource('ressources',    RessourceController::class)->only(['index', 'show']);
-Route::get('exercices/{exercice}/correction', [CorrectionController::class, 'show']);
 
 // ─── Authentifié ─────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::get('exercices/{exercice}/correction', [CorrectionController::class, 'show']);
     Route::post('/auth/logout',   [AuthController::class, 'logout']);
     Route::get('/auth/me',        [AuthController::class, 'me']);
     Route::match(['post', 'put'], '/auth/profile', [AuthController::class, 'updateProfile']);
@@ -62,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ─── Professeur + Admin ──────────────────────────────────
     Route::middleware('role:professeur,administrateur')->group(function () {
+        Route::post('pdf/extract-text',      [PdfController::class, 'extractText']);
         Route::apiResource('exercices',     ExerciceController::class)->except(['index', 'show']);
         Route::apiResource('corrections',   CorrectionController::class)->except(['show']);
         Route::apiResource('sujets-examen', SujetExamenController::class)->parameters(['sujets-examen' => 'sujetExamen'])->except(['index', 'show']);

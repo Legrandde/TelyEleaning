@@ -16,7 +16,7 @@ class UpdateProfileRequest extends FormRequest
     {
         $userId = $this->user()?->id;
 
-        $avatarRules = ['nullable'];
+        $avatarRules = ['nullable', 'string', 'max:500', 'regex:/^(https?:\/\/|\/|avatars\/).+/i'];
         if ($this->hasFile('avatar')) {
             $avatarRules = ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'];
         }

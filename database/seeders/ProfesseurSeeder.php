@@ -125,7 +125,7 @@ class ProfesseurSeeder extends Seeder
             ]
         );
 
-        $this->command->info('✅ Compte professeur créé avec succès :');
+        $this->command->info('[OK] Compte professeur créé avec succès :');
         $this->command->info('   - Email : professeur@tely.com');
         $this->command->info('   - Mot de passe : password123');
         $this->command->info('   - Rôle : professeur');

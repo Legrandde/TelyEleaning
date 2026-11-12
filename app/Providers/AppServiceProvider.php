@@ -12,7 +12,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        spl_autoload_register(function ($class) {
+            if (str_starts_with($class, 'Smalot\\PdfParser\\')) {
+                $relative = str_replace('Smalot\\PdfParser\\', '', $class);
+                $file = base_path('vendor/smalot/pdfparser/src/Smalot/PdfParser/' . str_replace('\\', '/', $relative) . '.php');
+                if (file_exists($file)) {
+                    require_once $file;
+                }
+            }
+        });
     }
 
     /**

@@ -6,12 +6,15 @@ use App\Http\Requests\Matiere\StoreMatiereRequest;
 use App\Http\Requests\Matiere\UpdateMatiereRequest;
 use App\Models\Matiere;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class MatiereController extends Controller
 {
     public function index(): JsonResponse
     {
-        $matieres = Matiere::withCount('exercices')->orderBy('nom')->get();
+        $matieres = Cache::remember('matieres_index', 3600, function () {
+            return Matiere::withCount('exercices')->orderBy('nom')->get();
+        });
 
         return response()->json($matieres);
     }
@@ -26,6 +29,7 @@ class MatiereController extends Controller
         }
 
         $matiere = Matiere::create($data);
+        Cache::forget('matieres_index');
 
         return response()->json([
             'message' => 'Matière créée avec succès.',
@@ -48,6 +52,7 @@ class MatiereController extends Controller
         }
 
         $matiere->update($data);
+        Cache::forget('matieres_index');
 
         return response()->json([
             'message' => 'Matière mise à jour.',
@@ -58,6 +63,7 @@ class MatiereController extends Controller
     public function destroy(Matiere $matiere): JsonResponse
     {
         $matiere->delete();
+        Cache::forget('matieres_index');
 
         return response()->json(['message' => 'Matière supprimée.']);
     }

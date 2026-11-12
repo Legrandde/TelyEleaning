@@ -12,8 +12,15 @@ class ExerciceController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Exercice::with(['matiere', 'niveau', 'categorie', 'professeur.user'])
-            ->actif();
+        $query = Exercice::with([
+            'matiere:id,nom,code',
+            'niveau:id,libelle,cycle,ordre',
+            'categorie:id,nom',
+            'professeur:id,user_id',
+            'professeur.user:id,nom,prenom,avatar,email'
+        ])
+        ->select('id', 'titre', 'enonce', 'type', 'difficulte', 'est_actif', 'image', 'matiere_id', 'niveau_id', 'categorie_id', 'professeur_id', 'created_at')
+        ->actif();
 
         // ─── Filtres ───
         if ($request->filled('niveau_id')) {
@@ -38,13 +45,22 @@ class ExerciceController extends Controller
 
         // ─── Recherche par mot-clé ───
         if ($request->filled('q')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('titre', 'like', "%{$request->q}%")
-                  ->orWhere('enonce', 'like', "%{$request->q}%");
+            $safeQ = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $request->q);
+            $query->where(function ($q) use ($safeQ) {
+                $q->where('titre', 'like', "%{$safeQ}%")
+                  ->orWhere('enonce', 'like', "%{$safeQ}%");
             });
         }
 
         $exercices = $query->latest()->paginate(15);
+
+        // Si l'utilisateur n'est pas connecté, ne renvoyer qu'un aperçu de l'énoncé (protection réseau)
+        if (!auth('sanctum')->check()) {
+            $exercices->getCollection()->transform(function (Exercice $ex) {
+                $ex->enonce = mb_substr($ex->enonce ?? '', 0, 180);
+                return $ex;
+            });
+        }
 
         return response()->json($exercices);
     }
@@ -71,16 +87,30 @@ class ExerciceController extends Controller
         ], 201);
     }
 
-    public function show(Exercice $exercice): JsonResponse
+    public function show(Request $request, Exercice $exercice): JsonResponse
     {
-        $exercice->load([
-            'matiere',
-            'niveau',
-            'categorie',
-            'professeur.user',
-            'correction',
-            'sujetsExamen',
-        ]);
+        $isAuthenticated = auth('sanctum')->check();
+
+        if ($isAuthenticated) {
+            $exercice->load([
+                'matiere',
+                'niveau',
+                'categorie',
+                'professeur.user',
+                'correction',
+                'sujetsExamen',
+            ]);
+        } else {
+            $exercice->load([
+                'matiere',
+                'niveau',
+                'categorie',
+                'professeur.user',
+            ]);
+            // Masquer le corrigé et tronquer l'énoncé dans la réponse JSON pour les visiteurs non connectés
+            $exercice->setRelation('correction', null);
+            $exercice->enonce = mb_substr($exercice->enonce ?? '', 0, 180);
+        }
 
         return response()->json($exercice);
     }
