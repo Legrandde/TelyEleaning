@@ -12,7 +12,7 @@ class RessourceController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Ressource::with(['matiere', 'niveau', 'professeur.user']);
+        $query = Ressource::with(['matiere', 'niveau', 'professeur:id,user_id', 'professeur.user:id,nom,prenom,avatar']);
 
         if ($request->filled('matiere_id')) {
             $query->where('matiere_id', $request->matiere_id);
@@ -31,7 +31,7 @@ class RessourceController extends Controller
         }
 
         if ($request->filled('q')) {
-            $q = $request->q;
+            $q = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string) $request->q);
             $query->where(function ($sub) use ($q) {
                 $sub->where('titre', 'like', "%{$q}%")
                     ->orWhere('description', 'like', "%{$q}%");
@@ -53,7 +53,8 @@ class RessourceController extends Controller
             'niveau_id'     => 'required|exists:niveaux,id',
             'professeur_id' => 'nullable|exists:professeurs,id',
             'fichier'       => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,ppt,pptx,xls,xlsx,zip|max:30720', // max 30MB
-            'fichier_path'  => 'nullable|string|max:500',
+            // Lien externe uniquement en HTTPS : un chemin interne arbitraire n'est jamais accepté
+            'fichier_path'  => 'nullable|string|max:500|url:https',
         ]);
 
         $user = Auth::user();
@@ -103,7 +104,7 @@ class RessourceController extends Controller
 
     public function show(Ressource $ressource): JsonResponse
     {
-        return response()->json($ressource->load(['matiere', 'niveau', 'professeur.user']));
+        return response()->json($ressource->load(['matiere', 'niveau', 'professeur:id,user_id', 'professeur.user:id,nom,prenom,avatar']));
     }
 
     public function update(Request $request, Ressource $ressource): JsonResponse
@@ -120,22 +121,36 @@ class RessourceController extends Controller
             'matiere_id'   => 'sometimes|exists:matieres,id',
             'niveau_id'    => 'sometimes|exists:niveaux,id',
             'fichier'      => 'nullable|file|mimes:pdf,doc,docx,odt,rtf,ppt,pptx,xls,xlsx,zip|max:30720',
-            'fichier_path' => 'nullable|string|max:500',
+            'fichier_path' => 'nullable|string|max:500|url:https',
         ]);
 
-        if ($request->hasFile('fichier')) {
-            if ($ressource->fichier_path && Storage::disk('public')->exists($ressource->fichier_path)) {
-                Storage::disk('public')->delete($ressource->fichier_path);
-            }
+        // Champ vide, ou URL actuelle renvoyée telle quelle par le formulaire : on conserve le fichier actuel
+        if (
+            empty($validated['fichier_path'])
+            || $validated['fichier_path'] === $ressource->fichier_url
+            || $validated['fichier_path'] === $ressource->fichier_path
+        ) {
+            unset($validated['fichier_path']);
+        }
 
+        if ($request->hasFile('fichier')) {
             $file = $request->file('fichier');
             $validated['fichier_nom'] = $file->getClientOriginalName();
             $validated['format'] = strtolower($file->getClientOriginalExtension());
             $validated['taille'] = $file->getSize();
             $validated['fichier_path'] = $file->store('ressources', 'public');
+        } elseif (isset($validated['fichier_path'])) {
+            $validated['fichier_nom'] = basename(parse_url($validated['fichier_path'], PHP_URL_PATH) ?: $validated['fichier_path']);
+            $validated['format'] = strtolower(pathinfo($validated['fichier_nom'], PATHINFO_EXTENSION));
+            $validated['taille'] = null;
         }
 
+        $ancienChemin = $ressource->fichier_path;
         $ressource->update($validated);
+
+        if ($ancienChemin !== $ressource->fichier_path) {
+            $this->supprimerFichierStocke($ancienChemin, $ressource->id);
+        }
 
         return response()->json([
             'message'   => 'Ressource mise à jour.',
@@ -150,12 +165,35 @@ class RessourceController extends Controller
             return response()->json(['message' => 'Action non autorisée. Vous ne pouvez supprimer que vos propres ressources.'], 403);
         }
 
-        if ($ressource->fichier_path && Storage::disk('public')->exists($ressource->fichier_path)) {
-            Storage::disk('public')->delete($ressource->fichier_path);
-        }
-
+        $chemin = $ressource->fichier_path;
         $ressource->delete();
+        $this->supprimerFichierStocke($chemin, $ressource->id);
 
         return response()->json(['message' => 'Ressource supprimée avec succès.']);
+    }
+
+    /**
+     * Supprime un fichier uploadé de ressource, uniquement s'il se trouve dans le dossier
+     * `ressources/` du disque public et qu'aucune autre ressource ne le référence.
+     * Empêche un chemin forgé de supprimer les fichiers d'autres utilisateurs.
+     */
+    private function supprimerFichierStocke(?string $chemin, int $ressourceId): void
+    {
+        if (
+            !$chemin
+            || str_contains($chemin, '..')
+            || str_contains($chemin, '\\')
+            || !preg_match('#^ressources/[^/]+$#', $chemin)
+        ) {
+            return;
+        }
+
+        $encoreUtilise = Ressource::where('fichier_path', $chemin)
+            ->where('id', '!=', $ressourceId)
+            ->exists();
+
+        if (!$encoreUtilise && Storage::disk('public')->exists($chemin)) {
+            Storage::disk('public')->delete($chemin);
+        }
     }
 }

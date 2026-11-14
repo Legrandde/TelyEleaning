@@ -36,6 +36,13 @@ class CorrectionController extends Controller
 
     public function store(StoreCorrectionRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $exercice = Exercice::findOrFail($request->validated('exercice_id'));
+
+        if (!$user?->isAdministrateur() && (!$user?->professeur || $exercice->professeur_id !== $user->professeur->id)) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez ajouter un corrigé qu\'à vos propres exercices.'], 403);
+        }
+
         $correction = Correction::create($request->validated());
 
         return response()->json([

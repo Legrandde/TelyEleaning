@@ -55,7 +55,11 @@ class SujetExamenController extends Controller
 
     public function store(StoreSujetExamenRequest $request): JsonResponse
     {
-        $sujet = SujetExamen::create($request->validated());
+        $data = $request->validated();
+        unset($data['exercices']);
+        $data['professeur_id'] = $request->user()?->professeur?->id;
+
+        $sujet = SujetExamen::create($data);
 
         if ($request->filled('exercices')) {
             $exercicesAvecOrdre = [];
@@ -98,6 +102,10 @@ class SujetExamenController extends Controller
 
     public function update(UpdateSujetExamenRequest $request, SujetExamen $sujetExamen): JsonResponse
     {
+        if (!$sujetExamen->estModifiablePar($request->user())) {
+            return response()->json(['message' => 'Action non autorisée. Vous ne pouvez modifier que vos propres sujets d\'examen.'], 403);
+        }
+
         $sujetExamen->update($request->validated());
 
         return response()->json([

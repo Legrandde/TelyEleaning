@@ -98,6 +98,17 @@ class Exercice extends Model
         return $query->where('est_actif', true);
     }
 
+    /**
+     * Liste publique : exercices actifs, sans énoncé complet ni PDF (contenu réservé aux connectés).
+     */
+    public function scopeApercuPublic($query)
+    {
+        return $query->actif()->select([
+            'id', 'titre', 'type', 'difficulte', 'image',
+            'matiere_id', 'niveau_id', 'categorie_id', 'created_at',
+        ]);
+    }
+
     public function scopeParNiveau($query, int $niveauId)
     {
         return $query->where('niveau_id', $niveauId);

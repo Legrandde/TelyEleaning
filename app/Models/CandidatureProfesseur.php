@@ -49,10 +49,7 @@ class CandidatureProfesseur extends Model
             return null;
         }
 
-        if (str_starts_with($this->cv_path, 'http://') || str_starts_with($this->cv_path, 'https://')) {
-            return $this->cv_path;
-        }
-
-        return asset('storage/' . $this->cv_path);
+        // CV stocké en privé : accessible uniquement via la route admin authentifiée
+        return "/api/admin/candidatures-professeurs/{$this->id}/cv";
     }
 }

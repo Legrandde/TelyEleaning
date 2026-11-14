@@ -14,8 +14,8 @@ class RegisterRequest extends FormRequest
             'nom'      => ['required', 'string', 'max:100'],
             'prenom'   => ['required', 'string', 'max:100'],
             'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'role'     => ['nullable', 'in:eleve'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
+            'role'     => ['nullable', 'in:eleve,professeur,administrateur'],
         ];
     }
 
@@ -27,7 +27,7 @@ class RegisterRequest extends FormRequest
             'email.required'            => 'L\'adresse email est obligatoire.',
             'email.unique'              => 'Cette adresse email est déjà utilisée.',
             'password.confirmed'        => 'La confirmation du mot de passe ne correspond pas.',
-            'password.min'              => 'Le mot de passe doit contenir au moins 6 caractères.',
+            'password.min'              => 'Le mot de passe doit contenir au moins 8 caractères.',
             'role.in'                   => 'Rôle invalide.',
         ];
     }

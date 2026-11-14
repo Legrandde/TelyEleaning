@@ -14,8 +14,23 @@ class StoreMatiereRequest extends FormRequest
             'nom'         => ['required', 'string', 'max:100'],
             'code'        => ['required', 'string', 'max:10', 'unique:matieres,code'],
             'description' => ['nullable', 'string'],
-            'image'       => ['required'],
+            'image'       => self::reglesImage(true),
         ];
+    }
+
+    /**
+     * Fichier : uniquement une image (jamais un script exécutable).
+     * Texte : uniquement une URL http(s) ou un chemin relatif, sans caractère dangereux.
+     */
+    public static function reglesImage(bool $obligatoire): array
+    {
+        $presence = $obligatoire ? 'required' : 'nullable';
+
+        if (request()->hasFile('image')) {
+            return [$presence, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'];
+        }
+
+        return [$presence, 'string', 'max:500', 'regex:#^(https?://|/)[^\s"\'<>\\\\]+$#i'];
     }
 
     public function messages(): array

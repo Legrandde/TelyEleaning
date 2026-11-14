@@ -28,7 +28,7 @@ class UpdateProfileRequest extends FormRequest
             'avatar'     => $avatarRules,
             'specialite' => ['nullable', 'string', 'max:255'],
             'classe'     => ['nullable', 'string', 'max:100'],
-            'matricule'  => ['nullable', 'string', 'max:100'],
+            'matricule'  => ['nullable', 'string', 'max:100', Rule::unique('eleves', 'matricule')->ignore($userId, 'user_id')],
             'niveau_id'  => ['nullable', 'exists:niveaux,id'],
         ];
     }

@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\UpdatePasswordRequest;
 use App\Models\User;
 use App\Models\Professeur;
 use App\Models\Eleve;
+use App\Services\NewsletterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,15 +18,24 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
+        $role = 'eleve';
+        if (auth('sanctum')->user()?->isAdministrateur() && in_array($request->role, ['eleve', 'professeur', 'administrateur'], true)) {
+            $role = $request->role;
+        }
+
         $user = User::create([
             'nom'      => $request->nom,
             'prenom'   => $request->prenom,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => 'eleve',
+            'role'     => $role,
         ]);
 
-        Eleve::firstOrCreate(['user_id' => $user->id]);
+        if ($role === 'eleve') {
+            Eleve::firstOrCreate(['user_id' => $user->id]);
+        }
+
+        NewsletterService::souhaiterBienvenue($user, auth('sanctum')->user()?->isAdministrateur() ? $request->password : null);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

@@ -25,7 +25,7 @@ class CategorieController extends Controller
  
     public function show(Categorie $categorie): JsonResponse
     {
-        return response()->json($categorie->load('exercices'));
+        return response()->json($categorie->load(['exercices' => fn ($q) => $q->apercuPublic()]));
     }
  
     public function update(StoreCategorieRequest $request, Categorie $categorie): JsonResponse

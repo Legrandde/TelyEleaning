@@ -14,9 +14,11 @@ use App\Http\Controllers\EleveController;
 use App\Http\Controllers\ExerciceController;
 use App\Http\Controllers\HistoriqueController;
 use App\Http\Controllers\MatiereController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\NiveauController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\ProfesseurController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfesseurDashboardController;
 use App\Http\Controllers\RessourceController;
 use App\Http\Controllers\SujetExamenController;
@@ -33,6 +35,15 @@ Route::post('/analytics/track', [AnalyticsController::class, 'track'])->middlewa
 
 // ─── Candidature Enseignant (public avec anti-spam) ───────────
 Route::post('/candidatures-professeurs', [CandidatureProfesseurController::class, 'store'])->middleware('throttle:5,1');
+
+// ─── Newsletter (public + liens signés confirmation / désabonnement) ──────────
+Route::post('/newsletter', [NewsletterController::class, 'store'])->middleware('throttle:10,1')->name('newsletter.store');
+Route::match(['get', 'post'], '/newsletter/confirmation/{abonne}', [NewsletterController::class, 'confirmer'])
+    ->middleware(['signed', 'throttle:10,1'])
+    ->name('newsletter.confirmer');
+Route::match(['get', 'post'], '/newsletter/desabonnement/{abonne}', [NewsletterController::class, 'desabonner'])
+    ->middleware(['signed', 'throttle:20,1'])
+    ->name('newsletter.desabonner');
 
 // ─── Public (lecture seule) ──────────────────────────────────
 Route::apiResource('niveaux',       NiveauController::class)->only(['index', 'show']);
@@ -82,14 +93,23 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('eleves',     EleveController::class);
         Route::apiResource('professeurs',ProfesseurController::class);
 
+        // Gestion des comptes : création avec rôle et changement de rôle
+        Route::get('admin/users',               [UserController::class, 'index']);
+        Route::post('admin/users',              [UserController::class, 'store']);
+        Route::patch('admin/users/{user}/role', [UserController::class, 'updateRole']);
+
         // Gestion des candidatures enseignants
         Route::get('admin/candidatures-professeurs',                    [CandidatureProfesseurController::class, 'index']);
         Route::get('admin/candidatures-professeurs/{id}',               [CandidatureProfesseurController::class, 'show']);
+        Route::get('admin/candidatures-professeurs/{id}/cv',            [CandidatureProfesseurController::class, 'cv']);
         Route::post('admin/candidatures-professeurs/{id}/approuver',    [CandidatureProfesseurController::class, 'approuver']);
         Route::post('admin/candidatures-professeurs/{id}/rejeter',      [CandidatureProfesseurController::class, 'rejeter']);
+        Route::delete('admin/candidatures-professeurs/{id}',            [CandidatureProfesseurController::class, 'destroy']);
         // Paramètres de configuration plateforme
         Route::put('admin/parametres',                                  [AppParametreController::class, 'update']);
         Route::post('admin/parametres',                                 [AppParametreController::class, 'update']);
+        // Gestion des abonnés newsletter
+        Route::get('admin/newsletter',                                  [NewsletterController::class, 'index']);
     });
 });
 

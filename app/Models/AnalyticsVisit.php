@@ -2,11 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AnalyticsVisit extends Model
 {
+    use Prunable;
+
+    /** Durée de conservation des traces de visite (recommandation CNIL : 13 mois maximum). */
+    public const CONSERVATION_MOIS = 13;
+
+    public function prunable(): Builder
+    {
+        return static::where('created_at', '<', now()->subMonths(self::CONSERVATION_MOIS));
+    }
+
     protected $fillable = [
         'user_id',
         'session_id',

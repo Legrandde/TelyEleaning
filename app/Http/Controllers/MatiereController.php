@@ -39,7 +39,7 @@ class MatiereController extends Controller
 
     public function show(Matiere $matiere): JsonResponse
     {
-        return response()->json($matiere->load('exercices'));
+        return response()->json($matiere->load(['exercices' => fn ($q) => $q->apercuPublic()]));
     }
 
     public function update(UpdateMatiereRequest $request, Matiere $matiere): JsonResponse

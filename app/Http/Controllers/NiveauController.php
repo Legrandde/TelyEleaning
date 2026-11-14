@@ -32,7 +32,7 @@ class NiveauController extends Controller
 
     public function show(Niveau $niveau): JsonResponse
     {
-        return response()->json($niveau->load('exercices'));
+        return response()->json($niveau->load(['exercices' => fn ($q) => $q->apercuPublic()]));
     }
 
     public function update(UpdateNiveauRequest $request, Niveau $niveau): JsonResponse

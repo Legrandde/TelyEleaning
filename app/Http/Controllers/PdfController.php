@@ -21,9 +21,11 @@ class PdfController extends Controller
      */
     public function extractText(Request $request): JsonResponse
     {
-        $request->validate([
+        $rules = [
             'pdf' => 'required|file|mimes:pdf|max:20480', // 20 MB max
-        ], [
+        ];
+
+        $request->validate($rules, [
             'pdf.required' => 'Veuillez fournir un fichier PDF.',
             'pdf.mimes'    => 'Le fichier doit être au format PDF.',
             'pdf.max'      => 'Le fichier PDF ne doit pas dépasser 20 Mo.',
@@ -49,9 +51,12 @@ class PdfController extends Controller
                 'text'      => $extractedText,
             ]);
         } catch (Exception $e) {
+            // Le détail technique reste dans les logs, jamais dans la réponse client
+            report($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors du traitement du fichier PDF : ' . $e->getMessage(),
+                'message' => 'Erreur lors du traitement du fichier PDF. Vérifiez que le fichier n\'est pas protégé ou corrompu.',
             ], 500);
         }
     }

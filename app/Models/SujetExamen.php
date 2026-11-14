@@ -17,7 +17,26 @@ class SujetExamen extends Model
         'fichier_pdf',
         'matiere_id',
         'niveau_id',
+        'professeur_id',
     ];
+
+    /**
+     * Un administrateur peut tout modifier ; un professeur uniquement les sujets dont il est l'auteur.
+     */
+    public function estModifiablePar(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isAdministrateur()) {
+            return true;
+        }
+
+        return $user->professeur !== null
+            && $this->professeur_id !== null
+            && (int) $this->professeur_id === (int) $user->professeur->id;
+    }
 
     protected $appends = ['pdf_url'];
 

@@ -23,6 +23,10 @@ class ProfesseurDashboardController extends Controller
         if ($professeurId) {
             $exercicesQuery->where('professeur_id', $professeurId);
             $ressourcesQuery->where('professeur_id', $professeurId);
+        } elseif (!$user->isAdministrateur()) {
+            // Professeur sans fiche : aucune donnée (jamais celles des autres enseignants)
+            $exercicesQuery->whereRaw('1 = 0');
+            $ressourcesQuery->whereRaw('1 = 0');
         }
 
         $mesExercicesCount = (clone $exercicesQuery)->count();
@@ -47,8 +51,17 @@ class ProfesseurDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // « À traiter » : ce qui demande une action de l'enseignant
+        $sansCorrige = (clone $exercicesQuery)->doesntHave('correction');
+        $aTraiter = [
+            'exercices_sans_corrige'       => (clone $sansCorrige)->count(),
+            'exercices_inactifs'           => (clone $exercicesQuery)->where('est_actif', false)->count(),
+            'exercices_sans_corrige_liste' => (clone $sansCorrige)->latest()->take(3)->get(['id', 'titre']),
+        ];
+
         return response()->json([
             'professeur' => $professeur ? $professeur->load('user') : null,
+            'a_traiter'  => $aTraiter,
             'counts' => [
                 'mes_exercices'  => $mesExercicesCount,
                 'mes_ressources' => $mesRessourcesCount,

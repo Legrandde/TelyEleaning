@@ -16,7 +16,7 @@ class UpdateMatiereRequest extends FormRequest
             'nom'         => ['sometimes', 'string', 'max:100'],
             'code'        => ['sometimes', 'string', 'max:10', "unique:matieres,code,{$matiereId}"],
             'description' => ['nullable', 'string'],
-            'image'       => ['nullable'],
+            'image'       => StoreMatiereRequest::reglesImage(false),
         ];
     }
 }

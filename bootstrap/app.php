@@ -24,8 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // ─── En-têtes de sécurité HTTP ──────────────────────
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
-        // ─── Traçage automatique des visites réelles ────────
-        $middleware->append(\App\Http\Middleware\TrackVisits::class);
+        // Le traçage des visites est fait uniquement côté client (POST /api/analytics/track).
+        // L'ancien middleware TrackVisits enregistrait chaque appel API comme une visite
+        // et faussait toutes les statistiques.
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {

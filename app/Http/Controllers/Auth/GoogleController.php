@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Eleve;
 use App\Models\User;
+use App\Services\NewsletterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -46,6 +48,9 @@ class GoogleController extends Controller
                 'avatar'     => $googleUser->getAvatar(),
                 'role'       => 'eleve', // uniquement lors de la création
             ]);
+
+            Eleve::firstOrCreate(['user_id' => $user->id]);
+            NewsletterService::souhaiterBienvenue($user);
         } else {
             // Mise à jour des informations Google
             $user->update([
@@ -76,11 +81,21 @@ class GoogleController extends Controller
             'credential' => 'required|string',
         ]);
 
-        $idToken = $request->input('credential');
+        $idToken = (string) $request->input('credential');
 
-        // Vérification sécurisée du jeton auprès du point de terminaison officiel de Google
+        // Sans client ID configuré, impossible de vérifier l'audience : on refuse (fail-closed)
+        $expectedClientId = config('services.google.client_id');
+        if (empty($expectedClientId)) {
+            report(new \RuntimeException('GOOGLE_CLIENT_ID non configuré : connexion One Tap refusée.'));
+            return response()->json(['message' => 'Connexion Google indisponible.'], 503);
+        }
+
+        // Vérification du jeton auprès du point de terminaison officiel de Google
+        // (jeton passé en paramètre encodé, jamais concaténé dans l'URL)
         try {
-            $response = Http::timeout(8)->get("https://oauth2.googleapis.com/tokeninfo?id_token={$idToken}");
+            $response = Http::timeout(8)->get('https://oauth2.googleapis.com/tokeninfo', [
+                'id_token' => $idToken,
+            ]);
 
             if (!$response->successful()) {
                 return response()->json(['message' => 'Token Google invalide ou expiré.'], 401);
@@ -92,13 +107,21 @@ class GoogleController extends Controller
         }
 
         // Vérification de l'audience (client ID) pour empêcher l'usurpation inter-applications
-        $expectedClientId = config('services.google.client_id') ?? env('GOOGLE_CLIENT_ID');
-        if (!empty($expectedClientId) && isset($payload['aud']) && $payload['aud'] !== $expectedClientId) {
+        if (($payload['aud'] ?? null) !== $expectedClientId) {
             return response()->json(['message' => 'Token Google non autorisé pour cette application.'], 403);
         }
 
-        // Vérification que l'email est validé par Google
-        if (isset($payload['email_verified']) && $payload['email_verified'] !== 'true' && $payload['email_verified'] !== true) {
+        if (!in_array($payload['iss'] ?? null, ['accounts.google.com', 'https://accounts.google.com'], true)) {
+            return response()->json(['message' => 'Émetteur du token Google invalide.'], 403);
+        }
+
+        if ((int) ($payload['exp'] ?? 0) < time()) {
+            return response()->json(['message' => 'Token Google expiré.'], 401);
+        }
+
+        // Vérification que l'email est validé par Google (champ obligatoire)
+        $emailVerified = $payload['email_verified'] ?? null;
+        if ($emailVerified !== 'true' && $emailVerified !== true) {
             return response()->json(['message' => 'Adresse email non vérifiée auprès de Google.'], 403);
         }
 
@@ -125,6 +148,9 @@ class GoogleController extends Controller
                 'avatar'    => $picture,
                 'role'      => 'eleve',
             ]);
+
+            Eleve::firstOrCreate(['user_id' => $user->id]);
+            NewsletterService::souhaiterBienvenue($user);
         } else {
             $user->update([
                 'google_id' => $googleId,

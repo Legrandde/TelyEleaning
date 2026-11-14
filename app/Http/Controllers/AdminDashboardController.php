@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CandidatureProfesseur;
 use App\Models\Categorie;
 use App\Models\Correction;
 use App\Models\Eleve;
@@ -69,6 +70,15 @@ class AdminDashboardController extends Controller
                 'derniers_sujets'        => $derniersSujets,
             ];
         });
+
+        // « À traiter » : toujours calculé en direct (hors cache) pour rester exact
+        $data['a_traiter'] = [
+            'candidatures_en_attente' => CandidatureProfesseur::where('statut', 'en_attente')->count(),
+            'exercices_sans_corrige'  => Exercice::doesntHave('correction')->count(),
+            'exercices_inactifs'      => Exercice::where('est_actif', false)->count(),
+            'sujets_sans_exercice'    => SujetExamen::doesntHave('exercices')->count(),
+            'nouveaux_inscrits_7j'    => User::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
 
         return response()->json($data);
     }
