@@ -13,28 +13,7 @@ class AppParametreController extends Controller
      */
     public function index(): JsonResponse
     {
-        $defaults = [
-            // Général
-            'site_nom'               => 'Tely Elearning',
-            'site_description'       => 'Plateforme d\'exercices, de sujets d\'examen et de ressources éducatives.',
-            'contact_email'          => 'contact@tely.com',
-            'mode_maintenance'       => '0',
-            // Pédagogie
-            'inscriptions_ouvertes'  => '1',
-            'candidatures_ouvertes'  => '1',
-            'correction_obligatoire' => '0',
-            'taille_max_fichier_mo'  => '25',
-            // Notifications
-            'notif_email_candidature'=> '1',
-            'notif_email_exercice'   => '0',
-            'alertes_navigateur'     => '1',
-            // Sécurité
-            'longueur_min_mdp'       => '8',
-            'expiration_session_min' => '120',
-        ];
-
-        $params = AppParametre::all()->pluck('valeur', 'cle')->toArray();
-        $merged = array_merge($defaults, $params);
+        $merged = AppParametre::tous();
 
         return response()->json([
             'status'     => 'success',
@@ -56,10 +35,34 @@ class AppParametreController extends Controller
             ], 422);
         }
 
+        // Liste blanche : les clés inconnues sont ignorées
+        $data = array_intersect_key($data, AppParametre::DEFAUTS);
+
         foreach ($data as $cle => $valeur) {
+            if (!is_scalar($valeur) && $valeur !== null) {
+                return response()->json(['status' => 'error', 'message' => "Valeur invalide pour {$cle}."], 422);
+            }
+            if (mb_strlen((string) $valeur) > 1000) {
+                return response()->json(['status' => 'error', 'message' => "Valeur trop longue pour {$cle}."], 422);
+            }
+            if ((str_starts_with($cle, 'reseau_') || $cle === 'annonce_lien') && $valeur
+                && !\App\Http\Requests\Page\SavePageRequest::lienSur((string) $valeur)) {
+                return response()->json(['status' => 'error', 'message' => "Lien non autorisé pour {$cle}."], 422);
+            }
+            if (! AppParametre::valeurValide($cle, (string) ($valeur ?? ''))) {
+                return response()->json(['status' => 'error', 'message' => "Valeur non autorisée pour {$cle}."], 422);
+            }
+        }
+
+        $avant = AppParametre::tous();
+
+        foreach ($data as $cle => $valeur) {
+            $valeur = (string) ($valeur ?? '');
             $groupe = 'general';
             if (str_starts_with($cle, 'notif_') || str_contains($cle, 'alerte')) {
                 $groupe = 'notifications';
+            } elseif (str_starts_with($cle, 'annonce_') || str_starts_with($cle, 'reseau_')) {
+                $groupe = 'site';
             } elseif (str_contains($cle, 'mdp') || str_contains($cle, 'session') || str_contains($cle, 'securite')) {
                 $groupe = 'securite';
             } elseif (str_contains($cle, 'inscriptions') || str_contains($cle, 'candidatures') || str_contains($cle, 'exercice') || str_contains($cle, 'fichier')) {
@@ -69,10 +72,30 @@ class AppParametreController extends Controller
             AppParametre::set($cle, $valeur, $groupe);
         }
 
+        $modifies = array_keys(array_filter($data, fn ($v, $k) => (string) ($avant[$k] ?? '') !== (string) ($v ?? ''), ARRAY_FILTER_USE_BOTH));
+        if ($modifies !== []) {
+            \App\Services\JournalService::log('parametres.modifies', 'Paramètres modifiés : ' . implode(', ', $modifies), null, ['cles' => $modifies]);
+        }
+        \Illuminate\Support\Facades\Cache::forget('parametres_publics');
+        \Illuminate\Support\Facades\Cache::forget('mode_maintenance');
+
         return response()->json([
             'status'     => 'success',
             'message'    => 'Paramètres enregistrés avec succès !',
-            'parametres' => AppParametre::all()->pluck('valeur', 'cle'),
+            'parametres' => AppParametre::tous(),
         ]);
+    }
+
+    /**
+     * Paramètres utiles au site public (sans authentification).
+     */
+    public function publics(): JsonResponse
+    {
+        $parametres = \Illuminate\Support\Facades\Cache::remember('parametres_publics', 300, fn () => array_intersect_key(
+            AppParametre::tous(),
+            array_flip(AppParametre::CLES_PUBLIQUES)
+        ));
+
+        return response()->json(['parametres' => $parametres]);
     }
 }

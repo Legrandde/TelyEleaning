@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Requests\Auth\UpdatePasswordRequest;
 use App\Models\User;
 use App\Models\Professeur;
+use App\Models\AppParametre;
 use App\Models\Eleve;
 use App\Services\NewsletterService;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,14 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
+        $parAdmin = auth('sanctum')->user()?->isAdministrateur() ?? false;
+        if (!$parAdmin && !AppParametre::actif('inscriptions_ouvertes')) {
+            return response()->json([
+                'message' => 'Les inscriptions sont momentanément fermées.',
+                'code'    => 'inscriptions_fermees',
+            ], 403);
+        }
+
         $role = 'eleve';
         if (auth('sanctum')->user()?->isAdministrateur() && in_array($request->role, ['eleve', 'professeur', 'administrateur'], true)) {
             $role = $request->role;
@@ -54,7 +63,18 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user  = Auth::user();
+        $user = Auth::user();
+
+        if ($user->isSuspendu()) {
+            Auth::logout();
+
+            return response()->json([
+                'message' => 'Votre compte est suspendu. Contactez le support pour plus d\'informations.',
+                'code'    => 'compte_suspendu',
+            ], 403);
+        }
+
+        $user->forceFill(['derniere_connexion_le' => now()])->save();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -83,6 +103,23 @@ class AuthController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $validated = $request->validated();
+
+        // Changer d'adresse e-mail = changer l'identifiant de connexion : mot de passe actuel exigé
+        if (mb_strtolower($validated['email']) !== mb_strtolower($user->email)) {
+            if ($user->google_id) {
+                return response()->json([
+                    'message' => 'Ce compte est lié à Google : son adresse e-mail ne peut pas être modifiée ici.',
+                    'errors'  => ['email' => ['Adresse liée à votre compte Google.']],
+                ], 422);
+            }
+            if (! Hash::check((string) $request->input('current_password'), $user->password)) {
+                return response()->json([
+                    'message' => 'Confirmez votre mot de passe actuel pour changer d\'adresse e-mail.',
+                    'errors'  => ['current_password' => ['Mot de passe actuel incorrect.']],
+                ], 422);
+            }
+            $user->forceFill(['email_verified_at' => null]);
+        }
 
         $userData = [
             'nom'    => $validated['nom'],

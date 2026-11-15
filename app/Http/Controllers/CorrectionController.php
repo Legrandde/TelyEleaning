@@ -23,6 +23,15 @@ class CorrectionController extends Controller
     // Récupérer la correction d'un exercice
     public function show(Exercice $exercice): JsonResponse
     {
+        // Un exercice désactivé (brouillon) et son corrigé ne sont visibles que par un admin ou son auteur
+        if (! $exercice->est_actif) {
+            $user = auth()->user();
+            $estAuteur = $user?->professeur && $exercice->professeur_id === $user->professeur->id;
+            if (! $user?->isAdministrateur() && ! $estAuteur) {
+                return response()->json(['message' => 'Ressource introuvable.'], 404);
+            }
+        }
+
         $correction = $exercice->correction;
 
         if (!$correction) {

@@ -47,6 +47,14 @@ class PasswordResetController extends Controller
             'password' => 'required|string|min:8|max:255|confirmed',
         ]);
 
+        $minimum = \App\Models\AppParametre::longueurMinMotDePasse();
+        if (mb_strlen((string) $request->input('password')) < $minimum) {
+            return response()->json([
+                'message' => "Le mot de passe doit contenir au moins {$minimum} caractères.",
+                'errors'  => ['password' => ["Le mot de passe doit contenir au moins {$minimum} caractères."]],
+            ], 422);
+        }
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {

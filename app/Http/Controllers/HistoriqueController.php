@@ -20,6 +20,7 @@ class HistoriqueController extends Controller
         }
 
         $historiques = Historique::where('eleve_id', $eleve->id)
+            ->whereHas('exercice', fn ($q) => $q->actif())
             ->with(['exercice.matiere', 'exercice.niveau'])
             ->when($request->filled('action'), fn($q) => $q->where('action', $request->action))
             ->recents(max(1, min(3650, (int) $request->get('jours', 30))))

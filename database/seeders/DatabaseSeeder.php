@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             NiveauSeeder::class,
             MatiereSeeder::class,
             ProfesseurSeeder::class,
+            PageSeeder::class,
+            BlogSeeder::class,
         ]);
     }
 }

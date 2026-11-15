@@ -19,6 +19,11 @@ class User extends Authenticatable
         'password',
         'avatar',
         'role',
+        'suspendu_le',
+        'motif_suspension',
+        'derniere_connexion_le',
+        'onboarding_termine_le',
+        'google_id',
     ];
 
     protected $hidden = [
@@ -30,11 +35,15 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
+        'suspendu_le'           => 'datetime',
+        'derniere_connexion_le' => 'datetime',
+        'onboarding_termine_le' => 'datetime',
     ];
 
     protected $appends = [
         'nom_complet',
         'avatar_url',
+        'est_suspendu',
     ];
 
     // ─── Relations ───
@@ -52,6 +61,13 @@ class User extends Authenticatable
     public function isEleve(): bool        { return $this->role === 'eleve'; }
     public function isProfesseur(): bool   { return $this->role === 'professeur'; }
     public function isAdministrateur(): bool { return $this->role === 'administrateur'; }
+
+    public function isSuspendu(): bool { return $this->suspendu_le !== null; }
+
+    public function getEstSuspenduAttribute(): bool
+    {
+        return $this->isSuspendu();
+    }
 
     public function getNomCompletAttribute(): string
     {

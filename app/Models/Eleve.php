@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
  
 class Eleve extends Model
 {
-    protected $fillable = ['user_id', 'matricule', 'niveau_id', 'classe'];
+    protected $fillable = ['user_id', 'matricule', 'niveau_id', 'classe', 'matieres_preferees', 'objectif'];
+
+    protected $casts = [
+        'matieres_preferees' => 'array',
+    ];
  
     // ─── Relations ───
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo

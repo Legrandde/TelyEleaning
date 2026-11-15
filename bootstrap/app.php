@@ -18,11 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ─── Middleware alias ────────────────────────────────
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
+            'role'        => \App\Http\Middleware\CheckRole::class,
+            'compte.actif' => \App\Http\Middleware\EnsureCompteActif::class,
         ]);
 
         // ─── En-têtes de sécurité HTTP ──────────────────────
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // ─── Mode maintenance (paramètre plateforme) ────────
+        $middleware->api(append: [\App\Http\Middleware\EnsureHorsMaintenance::class]);
 
         // Le traçage des visites est fait uniquement côté client (POST /api/analytics/track).
         // L'ancien middleware TrackVisits enregistrait chaque appel API comme une visite

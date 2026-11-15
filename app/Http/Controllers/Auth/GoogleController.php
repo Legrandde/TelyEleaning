@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppParametre;
 use App\Models\Eleve;
 use App\Models\User;
+use App\Services\CourrielService;
 use App\Services\NewsletterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,60 +18,119 @@ use Laravel\Socialite\Facades\Socialite;
 class GoogleController extends Controller
 {
     /**
-     * Redirection vers Google
+     * Redirection vers Google.
+     * Le frontend fournit un nonce aléatoire (conservé dans son sessionStorage) : il est transmis
+     * à Google comme « state » puis renvoyé au frontend, qui refuse tout retour sans nonce identique.
+     * Un lien de callback forgé par un tiers ne peut donc pas connecter la victime sur son compte.
      */
-    public function redirect()
+    public function redirect(Request $request)
     {
-        return Socialite::driver('google')
-            ->stateless()
-            ->redirect();
+        $driver = Socialite::driver('google')->stateless();
+        $nonce = (string) $request->query('nonce', '');
+
+        if (preg_match('/^[A-Za-z0-9_-]{16,128}$/', $nonce)) {
+            $driver->with(['state' => $nonce]);
+        }
+
+        return $driver->redirect();
     }
 
     /**
      * Callback Google
      */
-    public function callback()
+    public function callback(Request $request)
     {
-        $googleUser = Socialite::driver('google')
-            ->stateless()
-            ->user();
+        $front = rtrim((string) config('app.frontend_url'), '/');
 
-        // Recherche de l'utilisateur par email
-        $user = User::where('email', $googleUser->getEmail())->first();
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (\Throwable $e) {
+            return redirect()->away("{$front}/auth/login?error=google_auth_failed");
+        }
 
-        if (!$user) {
-            // Création du compte uniquement lors de la première connexion
+        if (! filter_var($googleUser->user['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN) || ! $googleUser->getEmail()) {
+            return redirect()->away("{$front}/auth/login?error=google_auth_failed");
+        }
+
+        [$user, $erreur] = $this->rattacherCompte(
+            (string) $googleUser->getEmail(),
+            (string) $googleUser->getId(),
+            (string) ($googleUser->user['family_name'] ?? $googleUser->getName()),
+            (string) ($googleUser->user['given_name'] ?? ''),
+            $googleUser->getAvatar()
+        );
+
+        if ($erreur) {
+            return redirect()->away("{$front}/auth/login?erreur={$erreur}");
+        }
+
+        $user->forceFill(['derniere_connexion_le' => now()])->save();
+        $token = $user->createToken('google-auth-token')->plainTextToken;
+
+        $state = (string) $request->query('state', '');
+        $fragment = http_build_query(array_filter([
+            'token' => $token,
+            'state' => preg_match('/^[A-Za-z0-9_-]{16,128}$/', $state) ? $state : null,
+        ]));
+
+        return redirect()->away("{$front}/auth/google/callback#{$fragment}");
+    }
+
+    /**
+     * Retrouve ou crée le compte associé à une identité Google vérifiée.
+     *
+     * @return array{0: ?User, 1: ?string} l'utilisateur, ou un code d'erreur
+     */
+    private function rattacherCompte(string $email, string $googleId, string $nom, string $prenom, ?string $avatar): array
+    {
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            if (! AppParametre::actif('inscriptions_ouvertes')) {
+                return [null, 'inscriptions_fermees'];
+            }
+
             $user = User::create([
-                'email'      => $googleUser->getEmail(),
-                'nom'        => $googleUser->getName(),
-                'prenom'     => '',
-                'password'   => Hash::make(Str::random(40)),
-                'google_id'  => $googleUser->getId(),
-                'avatar'     => $googleUser->getAvatar(),
-                'role'       => 'eleve', // uniquement lors de la création
+                'email'     => $email,
+                'nom'       => $nom !== '' ? $nom : $email,
+                'prenom'    => $prenom,
+                'password'  => Hash::make(Str::random(40)),
+                'google_id' => $googleId,
+                'avatar'    => $avatar,
+                'role'      => 'eleve',
             ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
 
             Eleve::firstOrCreate(['user_id' => $user->id]);
             NewsletterService::souhaiterBienvenue($user);
-        } else {
-            // Mise à jour des informations Google
-            $user->update([
-                'nom'       => $googleUser->getName(),
-                'google_id' => $googleUser->getId(),
-                'avatar'    => $googleUser->getAvatar(),
-            ]);
+
+            return [$user, null];
         }
 
-        $user->tokens()->delete();
+        if ($user->isSuspendu()) {
+            return [null, 'compte_suspendu'];
+        }
 
-        // Génération d'un nouveau token
-        $token = $user->createToken('google-auth-token')->plainTextToken;
+        // Protection contre le pré-détournement : un compte créé avec un mot de passe sur une adresse
+        // jamais vérifiée a pu l'être par un tiers. Google prouve que l'adresse appartient à la personne
+        // qui se connecte : on invalide alors le mot de passe et toutes les sessions existantes.
+        if (! $user->google_id && ! $user->email_verified_at) {
+            $user->forceFill(['password' => Hash::make(Str::random(40))])->save();
+            $user->tokens()->delete();
+            CourrielService::envoyer(
+                $user->email,
+                'Votre compte Tely est maintenant lié à Google',
+                "Bonjour,\n\nVotre compte Tely vient d'être relié à votre compte Google. Par sécurité, l'ancien mot de passe a été désactivé et les autres sessions ont été déconnectées.\n\nVous pouvez continuer à vous connecter avec Google, ou définir un nouveau mot de passe via « Mot de passe oublié ».\n\nL'équipe Tely"
+            );
+        }
 
-        $frontendUrl = config('app.frontend_url');
+        $user->forceFill([
+            'google_id'         => $googleId,
+            'avatar'            => $avatar ?: $user->avatar,
+            'email_verified_at' => $user->email_verified_at ?? now(),
+        ])->save();
 
-        return redirect()->away(
-            "{$frontendUrl}/auth/google/callback#token={$token}"
-        );
+        return [$user, null];
     }
 
     /**
@@ -136,28 +197,22 @@ class GoogleController extends Controller
             return response()->json(['message' => 'Email introuvable dans le jeton Google.'], 422);
         }
 
-        $user = User::where('email', $email)->first();
+        [$user, $erreur] = $this->rattacherCompte($email, (string) $googleId, (string) ($familyName ?: $name), (string) $givenName, $picture);
 
-        if (!$user) {
-            $user = User::create([
-                'email'     => $email,
-                'nom'       => $familyName ?: $name,
-                'prenom'    => $givenName ?: '',
-                'password'  => Hash::make(Str::random(40)),
-                'google_id' => $googleId,
-                'avatar'    => $picture,
-                'role'      => 'eleve',
-            ]);
-
-            Eleve::firstOrCreate(['user_id' => $user->id]);
-            NewsletterService::souhaiterBienvenue($user);
-        } else {
-            $user->update([
-                'google_id' => $googleId,
-                'avatar'    => $picture ?: $user->avatar,
-            ]);
+        if ($erreur === 'compte_suspendu') {
+            return response()->json([
+                'message' => 'Votre compte est suspendu. Contactez le support pour plus d\'informations.',
+                'code'    => 'compte_suspendu',
+            ], 403);
+        }
+        if ($erreur === 'inscriptions_fermees') {
+            return response()->json([
+                'message' => 'Les inscriptions sont momentanément fermées.',
+                'code'    => 'inscriptions_fermees',
+            ], 403);
         }
 
+        $user->forceFill(['derniere_connexion_le' => now()])->save();
         $token = $user->createToken('google-one-tap-token')->plainTextToken;
 
         return response()->json([

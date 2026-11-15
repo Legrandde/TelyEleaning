@@ -129,6 +129,10 @@ class ExerciceController extends Controller
 
         if ($user) {
             $exercice->load([...$relations, 'correction', 'sujetsExamen']);
+            if ($user->isEleve() && $exercice->est_actif) {
+                $eleve = \App\Models\Eleve::firstOrCreate(['user_id' => $user->id]);
+                EspaceEleveController::tracer($eleve, $exercice->id, 'consulte');
+            }
         } else {
             $exercice->load($relations);
             // Masquer le corrigé, le PDF complet et tronquer l'énoncé pour les visiteurs non connectés

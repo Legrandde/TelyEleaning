@@ -12,7 +12,7 @@ class StoreHistoriqueRequest extends FormRequest
     {
         return [
             'eleve_id'    => ['required', 'exists:eleves,id'],
-            'exercice_id' => ['required', 'exists:exercices,id'],
+            'exercice_id' => ['required', 'exists:exercices,id,est_actif,1,deleted_at,NULL'],
             'action'      => ['required', 'in:consulte,correction_vue,favori'],
         ];
     }

@@ -22,6 +22,10 @@ class CandidatureProfesseurController extends Controller
      */
     public function store(StoreCandidatureRequest $request): JsonResponse
     {
+        if (!\App\Models\AppParametre::actif('candidatures_ouvertes')) {
+            return response()->json(['message' => 'Les candidatures enseignants sont momentanément fermées.'], 403);
+        }
+
         $validated = $request->validated();
 
         // Vérifier si une candidature en attente existe déjà pour cet email
@@ -215,6 +219,7 @@ class CandidatureProfesseurController extends Controller
         ]);
 
         NewsletterService::souhaiterBienvenue($user, $plainPassword);
+        \App\Services\JournalService::log('candidature.approuvee', "Candidature #{$candidature->id} approuvée", $candidature);
 
         return response()->json([
             'message'            => $plainPassword
@@ -239,6 +244,7 @@ class CandidatureProfesseurController extends Controller
         ]);
 
         $motif = trim((string) $request->input('motif_rejet'));
+        \App\Services\JournalService::log('candidature.rejetee', "Candidature #{$candidature->id} rejetée", $candidature, ['motif' => $motif ?: null]);
         $precision = $motif !== '' ? "\n\nMotif indiqué par l’équipe pédagogique :\n{$motif}" : '';
 
         CourrielService::envoyer(

@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Eleve;
 use App\Models\Professeur;
 use App\Models\User;
+use App\Services\AnonymisationService;
+use App\Services\JournalService;
 use App\Services\NewsletterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Gestion des comptes utilisateurs par l'administrateur :
@@ -24,8 +28,30 @@ class UserController extends Controller
             'role'     => ['nullable', 'in:eleve,professeur,administrateur'],
             'search'   => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+            'statut'   => ['nullable', 'in:actif,suspendu'],
         ]);
 
+        $users = $this->requeteFiltree($request)->paginate((int) $request->query('per_page', 20));
+
+        // Compteurs par rôle pour les onglets de filtre
+        $counts = User::select('role', DB::raw('COUNT(*) as total'))
+            ->groupBy('role')
+            ->pluck('total', 'role');
+
+        return response()->json([
+            'users'  => $users,
+            'counts' => [
+                'tous'           => (int) $counts->sum(),
+                'eleve'          => (int) ($counts['eleve'] ?? 0),
+                'professeur'     => (int) ($counts['professeur'] ?? 0),
+                'administrateur' => (int) ($counts['administrateur'] ?? 0),
+                'suspendus'      => User::whereNotNull('suspendu_le')->count(),
+            ],
+        ]);
+    }
+
+    private function requeteFiltree(Request $request): Builder
+    {
         $query = User::query()
             ->with(['professeur:id,user_id,specialite', 'eleve:id,user_id,classe'])
             ->latest();
@@ -42,22 +68,98 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate((int) $request->query('per_page', 20));
+        if ($statut = $request->query('statut')) {
+            $statut === 'suspendu' ? $query->whereNotNull('suspendu_le') : $query->whereNull('suspendu_le');
+        }
 
-        // Compteurs par rôle pour les onglets de filtre
-        $counts = User::select('role', DB::raw('COUNT(*) as total'))
-            ->groupBy('role')
-            ->pluck('total', 'role');
+        return $query;
+    }
 
-        return response()->json([
-            'users'  => $users,
-            'counts' => [
-                'tous'           => (int) $counts->sum(),
-                'eleve'          => (int) ($counts['eleve'] ?? 0),
-                'professeur'     => (int) ($counts['professeur'] ?? 0),
-                'administrateur' => (int) ($counts['administrateur'] ?? 0),
-            ],
+    /**
+     * Export CSV des comptes (mêmes filtres que la liste).
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $request->validate([
+            'role'   => ['nullable', 'in:eleve,professeur,administrateur'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'statut' => ['nullable', 'in:actif,suspendu'],
         ]);
+
+        $query = $this->requeteFiltree($request);
+        JournalService::log('utilisateurs.export', 'Export CSV des comptes utilisateurs', null, $request->only(['role', 'search', 'statut']));
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['ID', 'Prénom', 'Nom', 'E-mail', 'Rôle', 'Statut', 'Inscrit le', 'Dernière connexion'], ';');
+            $query->chunk(500, function ($users) use ($out) {
+                foreach ($users as $u) {
+                    fputcsv($out, [
+                        $u->id,
+                        $this->celluleSure($u->prenom),
+                        $this->celluleSure($u->nom),
+                        $this->celluleSure($u->email),
+                        $u->role,
+                        $u->isSuspendu() ? 'suspendu' : 'actif',
+                        $u->created_at?->format('Y-m-d H:i'),
+                        $u->derniere_connexion_le?->format('Y-m-d H:i'),
+                    ], ';');
+                }
+            });
+            fclose($out);
+        }, 'utilisateurs-' . now()->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Neutralise l'injection de formules dans les tableurs. */
+    private function celluleSure(?string $valeur): string
+    {
+        $valeur = (string) $valeur;
+
+        return preg_match('/^[=+\-@\t\r]/', $valeur) ? "'" . $valeur : $valeur;
+    }
+
+    public function updateStatut(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'suspendu' => ['required', 'boolean'],
+            'motif'    => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Vous ne pouvez pas suspendre votre propre compte.'], 403);
+        }
+
+        if ($data['suspendu']) {
+            if ($user->isAdministrateur() && User::where('role', 'administrateur')->whereNull('suspendu_le')->count() <= 1) {
+                return response()->json(['message' => 'Impossible : il doit rester au moins un administrateur actif.'], 409);
+            }
+            $user->update(['suspendu_le' => now(), 'motif_suspension' => $data['motif'] ?? null]);
+            $user->tokens()->delete();
+            JournalService::log('utilisateur.suspendu', "Compte #{$user->id} suspendu", $user, ['motif' => $data['motif'] ?? null]);
+            $message = "Compte suspendu. L'utilisateur a été déconnecté.";
+        } else {
+            $user->update(['suspendu_le' => null, 'motif_suspension' => null]);
+            JournalService::log('utilisateur.reactive', "Compte #{$user->id} réactivé", $user);
+            $message = 'Compte réactivé.';
+        }
+
+        return response()->json(['message' => $message, 'user' => $user->fresh(['professeur', 'eleve'])]);
+    }
+
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Vous ne pouvez pas supprimer votre propre compte ici.'], 403);
+        }
+
+        if ($user->isAdministrateur() && User::where('role', 'administrateur')->count() <= 1) {
+            return response()->json(['message' => 'Impossible : il doit rester au moins un administrateur.'], 409);
+        }
+
+        AnonymisationService::anonymiser($user, 'utilisateur.supprime', "Compte #{$user->id} ({$user->role}) supprimé et anonymisé");
+
+        return response()->json(['message' => 'Compte supprimé.']);
     }
 
     public function store(Request $request): JsonResponse
@@ -89,6 +191,7 @@ class UserController extends Controller
         });
 
         NewsletterService::souhaiterBienvenue($user, $plainPassword);
+        JournalService::log('utilisateur.cree', "Compte #{$user->id} créé ({$user->role})", $user);
 
         return response()->json([
             'message'            => 'Utilisateur créé avec succès.',
@@ -131,6 +234,7 @@ class UserController extends Controller
 
         // Les jetons existants portent les anciens droits : on force une reconnexion
         $user->tokens()->delete();
+        JournalService::log('utilisateur.role', "Rôle du compte #{$user->id} changé en {$data['role']}", $user, ['role' => $data['role']]);
 
         return response()->json([
             'message' => 'Rôle mis à jour.',
