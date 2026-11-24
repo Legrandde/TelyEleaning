@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PdfParserService;
+use App\Services\PdfVisionService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,19 +11,24 @@ use Illuminate\Http\Request;
 class PdfController extends Controller
 {
     protected PdfParserService $pdfParser;
+    protected PdfVisionService $pdfVision;
 
-    public function __construct(PdfParserService $pdfParser)
+    public function __construct(PdfParserService $pdfParser, PdfVisionService $pdfVision)
     {
         $this->pdfParser = $pdfParser;
+        $this->pdfVision = $pdfVision;
     }
 
     /**
-     * Extraire le texte brut / énoncé depuis un fichier PDF uploadé
+     * Extraire le texte brut / énoncé depuis un fichier PDF uploadé.
+     * Utilise automatiquement Gemini Vision (formules LaTeX + scans) si configuré
+     * lorsque le PDF est scanné ou que `force_vision` est demandé.
      */
     public function extractText(Request $request): JsonResponse
     {
         $rules = [
-            'pdf' => 'required|file|mimes:pdf|max:20480', // 20 MB max
+            'pdf'          => 'required|file|mimes:pdf|max:20480', // 20 MB max
+            'force_vision' => 'sometimes|boolean',
         ];
 
         $request->validate($rules, [
@@ -32,9 +38,29 @@ class PdfController extends Controller
         ]);
 
         $file = $request->file('pdf');
+        $forceVision = $request->boolean('force_vision');
 
         try {
-            $extractedText = $this->pdfParser->extractText($file);
+            $extractedText = '';
+            $source = 'serveur';
+
+            if (!$forceVision) {
+                $extractedText = $this->pdfParser->extractText($file);
+            }
+
+            // Si PDF scanné (texte vide) ou extraction Vision demandée (formules LaTeX)
+            if (($forceVision || mb_strlen($extractedText) < 40) && $this->pdfVision->isConfigured()) {
+                try {
+                    $visionText = $this->pdfVision->extractWithFormulas($file);
+                    if ($visionText !== '') {
+                        $extractedText = $visionText;
+                        $source = 'gemini_vision';
+                    }
+                } catch (Exception $visionError) {
+                    report($visionError);
+                    // Si le parser texte avait déjà renvoyé quelque chose, on le garde
+                }
+            }
 
             if (empty($extractedText)) {
                 return response()->json([
@@ -45,13 +71,13 @@ class PdfController extends Controller
             }
 
             return response()->json([
-                'success'   => true,
-                'filename'  => $file->getClientOriginalName(),
-                'size'      => $file->getSize(),
-                'text'      => $extractedText,
+                'success'  => true,
+                'source'   => $source,
+                'filename' => $file->getClientOriginalName(),
+                'size'     => $file->getSize(),
+                'text'     => $extractedText,
             ]);
         } catch (Exception $e) {
-            // Le détail technique reste dans les logs, jamais dans la réponse client
             report($e);
 
             return response()->json([

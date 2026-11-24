@@ -7,6 +7,7 @@ use App\Http\Requests\SujetExamen\UpdateSujetExamenRequest;
 use App\Models\SujetExamen;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SujetExamenController extends Controller
 {
@@ -59,6 +60,10 @@ class SujetExamenController extends Controller
         unset($data['exercices']);
         $data['professeur_id'] = $request->user()?->professeur?->id;
 
+        if ($request->hasFile('fichier_pdf')) {
+            $data['fichier_pdf'] = $request->file('fichier_pdf')->store('sujets-pdf', 'public');
+        }
+
         $sujet = SujetExamen::create($data);
 
         if ($request->filled('exercices')) {
@@ -106,7 +111,15 @@ class SujetExamenController extends Controller
             return response()->json(['message' => 'Action non autorisée. Vous ne pouvez modifier que vos propres sujets d\'examen.'], 403);
         }
 
-        $sujetExamen->update($request->validated());
+        $data = $request->validated();
+        if ($request->hasFile('fichier_pdf')) {
+            if ($sujetExamen->fichier_pdf && !str_starts_with($sujetExamen->fichier_pdf, 'http')) {
+                Storage::disk('public')->delete($sujetExamen->fichier_pdf);
+            }
+            $data['fichier_pdf'] = $request->file('fichier_pdf')->store('sujets-pdf', 'public');
+        }
+
+        $sujetExamen->update($data);
 
         return response()->json([
             'message' => 'Sujet mis à jour.',

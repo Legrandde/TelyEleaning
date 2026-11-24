@@ -2370,6 +2370,10 @@
                                     "ennonce": {
                                         "type": "string"
                                     },
+                                    "fichier_pdf": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "exercices": {
                                         "type": "array",
                                         "items": {
@@ -4041,6 +4045,9 @@
                                     "pdf": {
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "force_vision": {
+                                        "type": "boolean"
                                     }
                                 },
                                 "required": [
@@ -4372,6 +4379,10 @@
                                     "ennonce": {
                                         "type": "string"
                                     },
+                                    "fichier_pdf": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "exercices": {
                                         "type": "array",
                                         "items": {
@@ -4481,6 +4492,10 @@
                                     },
                                     "ennonce": {
                                         "type": "string"
+                                    },
+                                    "fichier_pdf": {
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "matiere_id": {
                                         "type": "string"
@@ -4631,6 +4646,10 @@
                                     },
                                     "ennonce": {
                                         "type": "string"
+                                    },
+                                    "fichier_pdf": {
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "matiere_id": {
                                         "type": "string"

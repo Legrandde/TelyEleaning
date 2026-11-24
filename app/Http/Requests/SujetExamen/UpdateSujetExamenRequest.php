@@ -16,6 +16,7 @@ class UpdateSujetExamenRequest extends FormRequest
             'session'    => ['sometimes', 'in:juin,septembre,janvier'],
             'type'       => ['sometimes', 'in:bac,brevet,composition,autre'],
             'ennonce' => ['sometimes', 'string'],
+            'fichier_pdf' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             'matiere_id' => ['sometimes', 'exists:matieres,id'],
             'niveau_id'  => ['sometimes', 'exists:niveaux,id'],
         ];

@@ -18,6 +18,7 @@ class StoreSujetExamenRequest extends FormRequest
             'matiere_id' => ['required', 'exists:matieres,id'],
             'niveau_id'  => ['required', 'exists:niveaux,id'],
             'ennonce' => ['required', 'string'],
+            'fichier_pdf' => ['nullable', 'file', 'mimes:pdf', 'max:20480'],
             // IDs des exercices à attacher (optionnel à la création)
             'exercices'              => ['nullable', 'array'],
             'exercices.*.id'         => ['required', 'exists:exercices,id'],

@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -45,6 +46,8 @@ class GoogleController extends Controller
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Throwable $e) {
+            report($e);
+            Log::error('Google OAuth callback failed', ['message' => $e->getMessage()]);
             return redirect()->away("{$front}/auth/login?error=google_auth_failed");
         }
 
@@ -159,11 +162,13 @@ class GoogleController extends Controller
             ]);
 
             if (!$response->successful()) {
+                Log::warning('Google One Tap tokeninfo rejected', ['status' => $response->status(), 'body' => $response->body()]);
                 return response()->json(['message' => 'Token Google invalide ou expiré.'], 401);
             }
 
             $payload = $response->json();
         } catch (\Exception $e) {
+            report($e);
             return response()->json(['message' => 'Impossible de valider le jeton Google. Veuillez réessayer.'], 503);
         }
 
