@@ -13,6 +13,8 @@ php artisan route:cache
 php artisan view:cache
 
 # Migrations automatiques au déploiement (retire si tu préfères les lancer manuellement)
+php artisan storage:link || true
+
 php artisan migrate --force
 
 echo " Laravel prêt, lancement de FrankenPHP..."
